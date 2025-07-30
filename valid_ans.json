@@ -1,0 +1,202 @@
+[
+  {
+    "question": "How does ConvNeXt adjust the stage compute ratio compared to ResNet?",
+    "context": "ResNet’s (3,4,6,3) becomes (3,3,9,3) to match Swin-T’s 1:1:3:1 stage compute ratio.",
+    "answer": "By using (3,3,9,3) blocks per stage instead of (3,4,6,3), aligning FLOPs with Swin-T’s 1:1:3:1 ratio."
+  },
+  {
+    "question": "What is the ‘patchify’ stem and its effect on accuracy?",
+    "context": "Replacing ResNet’s 7×7 conv+pool stem with a 4×4 stride-4 convolution maintains accuracy (79.4%→79.5%).",
+    "answer": "A 4×4 non-overlapping conv with stride 4 replaces the 7×7 stem, yielding similar accuracy (~79.5%)."
+  },
+  {
+    "question": "Why does ConvNeXt use depthwise convolution and expanded width?",
+    "context": "Depthwise conv reduces FLOPs; expanding width to 96 channels compensates capacity, raising accuracy to 80.5%.",
+    "answer": "Depthwise conv cuts FLOPs and separating spatial/channel mixing; increasing channel width to 96 recovers capacity and boosts accuracy."
+  },
+  {
+    "question": "How are inverted bottlenecks implemented in ConvNeXt?",
+    "context": "We adopt a MobileNetV2-style block with a 4× expansion in the hidden 1×1 layers around a depthwise conv.",
+    "answer": "By expanding channel dimension fourfold in 1×1 convs around a depthwise 3×3 conv, reducing overall FLOPs and improving accuracy."
+  },
+  {
+    "question": "What kernel size did ConvNeXt find optimal for depthwise convs?",
+    "context": "Testing 3,5,7,9,11 showed saturation at 7×7, improving performance from 79.9% to 80.6%.",
+    "answer": "7×7 depthwise convolutions were optimal, raising accuracy to 80.6% with minimal FLOP change."
+  },
+  {
+    "question": "How does ConvNeXt reduce activation functions per block?",
+    "context": "Removing all but one GELU between 1×1 convs replicates Transformer style and increases accuracy by 0.7%.",
+    "answer": "By keeping a single GELU per block instead of multiple, improving accuracy to 81.3%."
+  },
+  {
+    "question": "What normalization change further boosts ConvNeXt’s performance?",
+    "context": "Replacing two BatchNorms with a single LayerNorm per block raises accuracy to 81.5%.",
+    "answer": "Substituting one BatchNorm to LayerNorm in each block, elevating top-1 accuracy to 81.5%."
+  },
+  {
+    "question": "Why are separate downsampling layers used in ConvNeXt?",
+    "context": "Adding 2×2 convs with LN between stages stabilizes training and boosts accuracy to 82.0%.",
+    "answer": "To mirror Transformer’s stage transitions with 2×2 stride-2 convs plus LN, improving accuracy to 82.0%."
+  },
+  {
+    "question": "What accuracy does ConvNeXt-T achieve on ImageNet-1K?",
+    "context": "ConvNeXt-T (29M params, 4.5G FLOPs) reaches 82.1% top-1 accuracy.",
+    "answer": "82.1% top-1 accuracy on ImageNet-1K."
+  },
+  {
+    "question": "How does ConvNeXt-B at 384² resolution compare to Swin-B?",
+    "context": "ConvNeXt-B (89M, 45G FLOPs) achieves 85.1% vs. Swin-B’s 84.5% with 12.5% higher throughput.",
+    "answer": "It outperforms Swin-B (85.1% vs. 84.5%) while attaining 95.7 vs. 85.1 images/s throughput."
+  },
+  {
+    "question": "What scaling behavior is observed with ImageNet-22K pre-training?",
+    "context": "ConvNeXt-XL reaches 87.8% vs. Swin-L’s 87.3%, showing ConvNets scale comparably.",
+    "answer": "ConvNeXt-XL attains 87.8%—surpassing Swin-L’s 87.3%—demonstrating strong scaling with large-scale pre-training."
+  },
+  {
+    "question": "How do isotropic ConvNeXts perform vs. ViT?",
+    "context": "Isotropic ConvNeXt-B matches ViT-B’s 81.8% with 16.9G FLOPs and 7.7 GB training memory.",
+    "answer": "They perform on par (82.0% vs. 81.8%) with slightly lower FLOPs and memory use."
+  },
+  {
+    "question": "What are ConvNeXt’s COCO detection APs using Mask-RCNN?",
+    "context": "ConvNeXt-T yields 46.2 AP⁵⁰ on COCO, comparable to Swin-T’s 46.0.",
+    "answer": "Mask-RCNN with ConvNeXt-T backbone achieves 46.2 AP⁵⁰, matching Swin-T."
+  },
+  {
+    "question": "How does ConvNeXt affect ADE20K segmentation mIoU?",
+    "context": "ConvNeXt-B (ImageNet-22K) reaches 53.1% mIoU vs. Swin-B’s 51.7%.",
+    "answer": "It attains 53.1% mIoU, outperforming Swin-B’s 51.7%."
+  },
+  {
+    "question": "What robustness gains does ConvNeXt-XL show on ImageNet-A?",
+    "context": "ConvNeXt-XL (22K-pretrained) scores 69.3% vs. ResNet-50’s 76.7% in clean accuracy, and 38.8% top-1 on ImageNet-A.",
+    "answer": "It achieves 38.8% on ImageNet-A, demonstrating improved domain generalization without specialized defenses."
+  },
+  {
+    "question": "Which key design choices from Transformers inform ConvNeXt?",
+    "context": "Macro stage ratios, patchify stem, depthwise conv, inverted bottleneck, large kernel, fewer activations/norms.",
+    "answer": "Stage compute ratio, patchify stem, depthwise and inverted bottleneck blocks, 7×7 kernels, single GELU, and LayerNorm."
+  },
+  {
+    "question": "Why does ConvNeXt remain computationally efficient?",
+    "context": "Fully convolutional design avoids quadratic attention cost, and modern convs benefit from hardware optimizations.",
+    "answer": "Because it uses standard convolutions and depthwise separable blocks, leveraging optimized GPU kernels without attention overhead."
+  },
+  {
+    "question": "What is the primary challenge addressed by the paper?",
+    "context": "Transformers excel at modeling long-range interactions but incur quadratic cost in sequence length, making high-resolution image synthesis infeasible.",
+    "answer": "Overcoming the quadratic computational cost of applying transformers directly to high-resolution pixel sequences."
+  },
+  {
+    "question": "How do the authors propose to combine CNNs and transformers?",
+    "context": "We learn a convolutional codebook of context-rich visual parts, then model their global composition autoregressively with a transformer.",
+    "answer": "Use a CNN-based VQGAN to encode images into discrete tokens, then apply a transformer to model token sequences."
+  },
+  {
+    "question": "What is VQGAN and why is it introduced?",
+    "context": "Standard VQVAEs with L2 loss produce blurry reconstructions; VQGAN adds a patch GAN discriminator and perceptual loss for sharp, compressed encodings.",
+    "answer": "A VQVAE variant using adversarial and perceptual losses to learn a compact, perceptually rich codebook for image tokens."
+  },
+  {
+    "question": "How is quantization performed in the encoder?",
+    "context": "Each spatial feature vector ŷᵢⱼ is mapped to its nearest codebook entry zk via element-wise nearest-neighbor quantization.",
+    "answer": "By replacing each encoder output vector with the closest vector in a learned discrete codebook (straight-through gradient)."
+  },
+  {
+    "question": "What loss functions govern VQGAN training?",
+    "context": "LVQ = reconstruction loss + codebook and commitment losses; LGAN = patch discriminator adversarial loss with adaptive weight λ.",
+    "answer": "A combined VQ loss (L₂ reconstruction + codebook commitment) and adversarial perceptual loss weighted adaptively."
+  },
+  {
+    "question": "How is λ in the adversarial loss calculated?",
+    "context": "λ = ∥∇GL[Lrec]∥/ (∥∇GL[LGAN]∥ + δ) ensures balanced gradient magnitudes between perceptual and adversarial terms.",
+    "answer": "By ratio of decoder loss gradients: λ = gradient norm of reconstruction loss over gradient norm of GAN loss."
+  },
+  {
+    "question": "What is the role of the [class] token analog in image synthesis?",
+    "context": "For class-conditional synthesis, class labels are prepended as tokens before image code sequence.",
+    "answer": "Classes are encoded as token sequences prepended to the codebook index stream for conditional generation."
+  },
+  {
+    "question": "How are high-resolution images generated despite transformer length limits?",
+    "context": "A sliding-window attention mechanism processes overlapping patches of the code sequence sequentially.",
+    "answer": "By cropping and generating in patch-based windows with overlapping context and sliding attention masks."
+  },
+  {
+    "question": "What sequence ordering is used for autoregression?",
+    "context": "Tokens are unrolled in row-major raster scan order, which yields better likelihood and sample quality than alternatives.",
+    "answer": "Row-major (raster) scan ordering of codebook indices."
+  },
+  {
+    "question": "What is the effective sequence length for a 256×256 image with f=16?",
+    "context": "Downsampling factor f = 16 yields h = H/16 = 16, so sequence length h·w = 16·16 = 256 tokens.",
+    "answer": "A 256×256 image becomes a 16×16 grid of tokens, giving a sequence length of 256."
+  },
+  {
+    "question": "Which downstream tasks demonstrate conditional synthesis capabilities?",
+    "context": "Experiments include depth-to-image, semantic layout-to-image, pose-guided person generation, super-resolution, and class-conditional synthesis.",
+    "answer": "Depth and edge guidance, semantic-layout, pose keypoints, stochastic super-resolution, and class-conditional ImageNet generation."
+  },
+  {
+    "question": "How does codebook downsampling factor f affect model performance?",
+    "context": "Larger f reduces sequence length but worsens reconstruction; optimal trade-off around f = 16 for faces, up to f = 32 for landscapes.",
+    "answer": "Higher f improves transformer modeling but degrades reconstruction beyond a dataset-dependent threshold (f≈16–32)."
+  },
+  {
+    "question": "What metrics are used to evaluate generative quality?",
+    "context": "FID and Inception Score compare generated images against real data; NLL assesses likelihood under the transformer.",
+    "answer": "Fréchet Inception Distance (FID), Inception Score (IS), and transformer negative log-likelihood (NLL)."
+  },
+  {
+    "question": "How do transformers compare to PixelSNAIL on latent codes?",
+    "context": "On multiple datasets, transformers achieve lower NLL than PixelSNAIL when trained for equal time or steps.",
+    "answer": "Transformers consistently outperform PixelSNAIL in negative log-likelihood on learned latent representations."
+  },
+  {
+    "question": "Why is a perceptual discriminator used in VQGAN?",
+    "context": "To maintain high‐frequency detail and perceptual realism at high compression rates that L₂ loss alone cannot enforce.",
+    "answer": "It encourages realistic textures and sharp reconstructions by modeling human perceptual judgments."
+  },
+  {
+    "question": "What impact does codebook size |Z| have on performance?",
+    "context": "Larger |Z| improves reconstruction FID and enables finer detail but increases transformer vocabulary and marginal cost.",
+    "answer": "Increasing codebook size lowers reconstruction FID and supports higher‐fidelity synthesis at the expense of larger vocab."
+  },
+  {
+    "question": "How are normalization layers handled in the codebook encoder/decoder?",
+    "context": "GroupNorm and Swish activations follow each convolution before quantization layers; LayerNorm is employed in ConvNeXt blocks.",
+    "answer": "Group normalization with Swish activations in the VQGAN, ensuring stable feature distributions before quantization."
+  },
+  {
+    "question": "What architecture underlies the transformer used?",
+    "context": "Identical to GPT-2: multi-head self-attention, feed-forward layers, layer norm, trained with dropout=0 on image tokens.",
+    "answer": "A GPT-2–style decoder-only transformer with 16 heads and variable depth (12–32 layers) matching token budgets."
+  },
+  {
+    "question": "What training data mixtures are used for ImageNet pre-training?",
+    "context": "Public ImageNet-21k and JFT-300M datasets provide 14–300M images for VQGAN pre-training.",
+    "answer": "ImageNet-21k (14M/21k classes) and Google JFT-300M (303M/18k classes)."
+  },
+  {
+    "question": "How does conditional synthesis handle spatial maps?",
+    "context": "Spatial tokens (e.g. segmentation codes) are learned via a separate VQGAN and prepended to image tokens.",
+    "answer": "By encoding spatial inputs with a dedicated VQGAN and concatenating their code tokens before image token sequence."
+  },
+  {
+    "question": "What hyperparameters control transformer capacity?",
+    "context": "Number of layers (nlayer), embedding dim ne=256, codebook size |Z|=1024–16384, dropout=0.0–0.1 across tasks.",
+    "answer": "Transformer depth (12–48 layers), embedding size 256, codebook size up to 16K, and minimal dropout."
+  },
+  {
+    "question": "Why do the authors claim their approach is unified?",
+    "context": "The same VQGAN+transformer pipeline, with no task-specific modules, handles unconditional, conditional, and high-resolution synthesis.",
+    "answer": "Because a single two-stage model generalizes across diverse synthesis tasks without architectural changes."
+  },
+  {
+    "question": "What future directions do the authors suggest?",
+    "context": "Extending to detection/segmentation, self-supervised pretraining, axial attention, alternative orderings, and efficient sampling.",
+    "answer": "Applying to other vision tasks, exploring self-supervised objectives, and optimizing sequence ordering and attention mechanisms."
+  }
+]
