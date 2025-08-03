@@ -1,5 +1,4 @@
-import os
-import torch
+import os, torch
 from datasets import load_dataset
 from transformers import AutoTokenizer,AutoModelForCausalLM,TrainingArguments, BitsAndBytesConfig
 from peft import LoraConfig,get_peft_model,prepare_model_for_kbit_training
@@ -10,7 +9,7 @@ load_dotenv()
 HUGGING_FACEHUB_MODEL="meta-llama/Llama-3.1-8b-instruct"
 HGFC_API_TOKEN=os.getenv("HUGGINGFACEHUB_API_TOKEN")
 DATASET="qca_dataset.json"
-OUTPUT_DIR="finetuned_llama3"
+OUTPUT_DIR="finetuned_llama3_adapter"
 
 LORA_R=16 
 LORA_ALPHA=32
@@ -30,19 +29,30 @@ LOGGING_STEPS=10
 SAVE_STEPS=100
 SAVE_TOTAL_LIMIT=3
 MAX_SEQ_LENGTH=2048
-FP16=False
-BP16=True
-DEVICE_MAP="mps" if torch.backends.mps.is_available() else "auto"
+FP16=True
+BF16=False
+DEVICE_MAP="auto"
+
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.float16,
+    bnb_4bit_use_double_quant=True,
+)
 
 dataset=load_dataset('json',data_files=DATASET)
-model=AutoModelForCausalLM.from_pretrained(HUGGING_FACEHUB_MODEL,torch_dtype=torch.bfloat16,device_map=DEVICE_MAP,token=HGFC_API_TOKEN)
-
+model=AutoModelForCausalLM.from_pretrained(
+    HUGGING_FACEHUB_MODEL,
+    quantization_config=bnb_config,
+    device_map=DEVICE_MAP,
+    token=HGFC_API_TOKEN,
+)
 model.config.use_cache=False
 model.enable_input_require_grads()
 
-tokenizser=AutoTokenizer.from_pretrained(HUGGING_FACEHUB_MODEL,token=HGFC_API_TOKEN)
-tokenizser.pad_token=tokenizser.eos_token
-tokenizser.padding_side="right"
+tokenizer=AutoTokenizer.from_pretrained(HUGGING_FACEHUB_MODEL,token=HGFC_API_TOKEN)
+tokenizer.pad_token=tokenizer.eos_token
+tokenizer.padding_side="right"
 
 model=prepare_model_for_kbit_training(model)
 peft=LoraConfig(r=LORA_R,lora_alpha=LORA_ALPHA,lora_dropout=LORA_DROPOUT,bias=BIAS,task_type=TASK_TYPE,target_modules=["q_proj","v_proj","k_proj","o_proj","gate_proj","up_proj","down_proj"])
@@ -56,14 +66,14 @@ def formatting(eg):
         question=eg["question"][i]
         context=eg["context"][i]
         answer=eg["answer"][i]
-        
+
         messages=[
             {"role": "system", "content": "You are an AI assistant specialized in answering questions about academic research papers. Provide concise and accurate answers based *only* on the provided context."},
             {"role": "user", "content": f"Context: {context}\nQuestion: {question}"},
             {"role": "assistant", "content": answer},
         ]
-        op.append(tokenizser.apply_chat_template(messages,tokenize=False,add_generated_prompt=False))
-    
+        op.append(tokenizer.apply_chat_template(messages,tokenize=False,add_generation_prompt=False))
+
     return {"text": op}
 
 training_arguments=TrainingArguments(
@@ -78,8 +88,8 @@ training_arguments=TrainingArguments(
     logging_steps=LOGGING_STEPS,
     save_steps=SAVE_STEPS,
     save_total_limit=SAVE_TOTAL_LIMIT,
-    fp16=True,
-    bf16=False,
+    fp16=FP16,
+    bf16=BF16,
     max_steps=-1,
     group_by_length=True,
     report_to="none",
@@ -90,7 +100,7 @@ training_arguments=TrainingArguments(
 
 trainer = SFTTrainer(
     model=model,
-    tokenizer=tokenizser,
+    tokenizer=tokenizer,
     train_dataset=dataset,
     peft_config=peft,
     formatting_func=formatting,

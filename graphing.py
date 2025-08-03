@@ -1,9 +1,7 @@
 import networkx as nx
 from neo4j import GraphDatabase
-import re
+import re, spacy, hashlib
 from collections import Counter
-import spacy
-import hashlib
 
 nlp_graph=spacy.load("en_core_web_sm")
 
@@ -34,7 +32,7 @@ def load_nx_graph_to_neo4j_tx(tx,graph_nx: nx.DiGraph):
     for nid,original_attrs in graph_nx.nodes(data=True):
 
         l=original_attrs.get("type","Unknown")
-        props_for_neo4j={k:v for k,v in original_attrs.items() if k != "type"}
+        props_for_neo4j={k:v for k,v in original_attrs.items() if k!="type"}
         
         if l=="Paper":
 

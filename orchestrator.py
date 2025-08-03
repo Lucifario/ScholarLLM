@@ -5,9 +5,9 @@ from extractor import extract_structured_pdf
 from vector_embedch import embed_and_load_chroma_data, embedding_function
 from graphing import build_and_load_paper_graph
 
-NEO4J_URI=os.getenv('NEO4J_AURA_URL')
-NEO4J_USERNAME=os.getenv('NEO4J_AURA_USERNAME')
-NEO4J_PASSWORD=os.getenv('NEO4J_AURA_PASSWORD')
+NEO4J_URI=os.getenv('NEO4J_URI')
+NEO4J_USERNAME=os.getenv('NEO4J_USERNAME')
+NEO4J_PASSWORD=os.getenv('NEO4J_PASSWORD')
 
 pdf_dir="pdfs"
 CHROMA_PERSIST_DIRECTORY="chroma_db"

@@ -45,7 +45,7 @@ def embed_and_load_chroma_data(extracted_data: dict,chromadb_instance: Chroma):
         }
 
         if blk.get("caption"):
-            metadata["caption"]=str(blk["caption"].strip())
+            metadata["caption"]=str(blk.get("caption", "")).strip()
 
         metadatas.append(metadata)
         ids.append(blk.get("block_id", f"block_{hashlib.sha256(content.encode()).hexdigest()}"))

@@ -1,9 +1,7 @@
-import os
-import torch
+import os, torch, evaluate
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments, BitsAndBytesConfig
 from peft import PeftModel
-import evaluate
 from tqdm import tqdm
 from dotenv import load_dotenv
 load_dotenv()
@@ -12,15 +10,15 @@ HFGC_API_TOKEN=os.getenv("HUGGINGFACEHUB_API_TOKEN")
 HGFC_MODEL="meta-llama/Llama-3.1-8b-instruct"
 LORA_PATH="finetuned_llama3_adapter"
 VALID_DATASET="valid_ans.json"
-
 MAX_SEQ_LENGTH=2048
-BF16=True
-DEVICE_MAP="mps" if torch.backends.mps.is_available() else "auto"
+FP16=True
+BF16=False
+DEVICE_MAP="auto"
 
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
     bnb_4bit_quant_type="nf4",
-    bnb_4bit_compute_dtype=torch.bfloat16 if BF16 else torch.float16,
+    bnb_4bit_compute_dtype=torch.float16,
     bnb_4bit_use_double_quant=True,
 )
 
@@ -63,7 +61,7 @@ for example in tqdm(evaluated_dataset,desc="Generating answers"):
 
     generated_id=outputs[0,inputs["input_ids"].shape[1]:]
     generated_text=tokenizer.decode(generated_id,skip_special_tokens=True)
-    generated_ans.append(generated_text,skip_special_tokens=True)
+    generated_ans.append(generated_text)
 
 rouge_eval=evaluate.load("rouge")
 results=rouge_eval.compute(predictions=generated_ans,references=reference_ans,use_stemmer=True)

@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from typing import List,TypedDict
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
-from langchain_community.llms import huggingface_endpoint
+from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain_community.graphs import Neo4jGraph
 from langchain.chains import RetrievalQA
 from langchain.chains.graph_qa.cypher import GraphCypherQAChain
@@ -17,9 +17,9 @@ EMBEDDING_MODEL="sentence-transformers/all-mpnet-base-v2"
 CHROMA_PERSIST_DIRECTORY="chroma_db"
 CHROMA_COLLECTION_NAME="embed_storage"
 
-NEO4J_URI=os.getenv('NEO4J_AURA_URL')
-NEO4J_USERNAME=os.getenv('NEO4J_AURA_USERNAME')
-NEO4J_PASSWORD=os.getenv('NEO4J_AURA_PASSWORD')
+NEO4J_URI=os.getenv('NEO4J_URI')
+NEO4J_USERNAME=os.getenv('NEO4J_USERNAME')
+NEO4J_PASSWORD=os.getenv('NEO4J_PASSWORD')
 
 HUGGING_FACEHUB_MODEL="meta-llama/Llama-3.1-8b-instruct"
 HGFC_API_TOKEN=os.getenv("HUGGINGFACEHUB_API_TOKEN")
@@ -28,7 +28,7 @@ embedding_function=HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
 
 vectordb=Chroma(collection_name=CHROMA_COLLECTION_NAME,embedding_function=embedding_function,persist_directory=CHROMA_PERSIST_DIRECTORY)
 
-llm=huggingface_endpoint(repo_id=HUGGING_FACEHUB_MODEL,temperature=0.7,max_new_token=512,hugging_face_api_tokens=HGFC_API_TOKEN)
+llm=HuggingFaceEndpoint(repo_id=HUGGING_FACEHUB_MODEL,temperature=0.7,max_new_tokens=512,huggingfacehub_api_token=HGFC_API_TOKEN)
 
 graph=Neo4jGraph(url=NEO4J_URI,username=NEO4J_USERNAME,password=NEO4J_PASSWORD)
 graph.refresh_schema()
@@ -134,39 +134,26 @@ if __name__=="__main__":
 
         final_state=None
         for s in app.stream({"question":query_text}):
-            print(f"\n--- Current State Update (Node:{list(s.keys())[0]}) ---")
-            print(s)
             final_state=s
 
         if final_state:
             print("\n=== FINAL ANSWER ===")
-            print(final_state[list(final_state.keys())[0]]["final_answer"])
+            final_answer_content = final_state.get('synthesize_answer', {}).get('final_answer', 'N/A')
+            print(final_answer_content)
 
             print("\n=== DEBUGGING INFORMATION ===")
             print("\nVector Source Documents:")
-            retrieved_docs=final_state.get('synthesize_answer',{}).get('vector_docs',[])
-            if not retrieved_docs:
-                for node_output in final_state.values():
-                    if isinstance(node_output,dict) and 'vector_docs' in node_output:
-                        retrieved_docs=node_output['vector_docs']
-                        break
-            
+            retrieved_docs = final_state.get('retrieve_vector_docs', {}).get('vector_docs', [])
             if retrieved_docs:
-                for i,doc in enumerate(retrieved_docs):
+                for i, doc in enumerate(retrieved_docs):
                     print(f"  Source {i+1} (Block ID:{doc.metadata.get('block_id_original','N/A')},Page:{doc.metadata.get('page_number','N/A')},Type:{doc.metadata.get('block_type','N/A')}):")
                     print(f"    Content Snippet:{doc.page_content[:150]}...")
                     if doc.metadata.get('caption'):
                         print(f"    Caption:{doc.metadata.get('caption')[:100]}...")
                     print("-" * 20)
             else:
-                print("No vector source documents were available in the final state.")
-            
-            print("\nGraph Raw Answer:")
-            graph_answer_raw=final_state.get('synthesize_answer',{}).get('graph_result','N/A') # Might need adjustment
-            if not graph_answer_raw:
-                 for node_output in final_state.values():
-                    if isinstance(node_output,dict) and 'graph_result' in node_output:
-                        graph_answer_raw=node_output['graph_result']
-                        break
+                print("No vector source documents were available.")
 
+            print("\nGraph Raw Answer:")
+            graph_answer_raw = final_state.get('query_graph', {}).get('graph_result', 'N/A')
             print(graph_answer_raw)

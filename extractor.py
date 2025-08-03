@@ -1,18 +1,7 @@
-import fitz
-import pdfplumber
+import fitz, pdfplumber, PIL.Image, io, re, uuid, datetime, json, base64, pytesseract, torch, numpy as np
 from typing import List,Optional,Dict,Any,Tuple
-import PIL.Image
-import io
-import re
-import uuid
-import datetime
-import json
-import base64
 from PIL import Image
-import pytesseract
 from transformers import CLIPProcessor,CLIPModel
-import torch
-import numpy as np
 
 pytesseract.pytesseract.tesseract_cmd='/opt/homebrew/bin/tesseract'
 CLIP_PROCESSOR=CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
@@ -502,11 +491,10 @@ def assign_nearest_heading(blocks:List[Dict[str,Any]])->List[Dict[str,Any]]:
         block["toc_section"]=current_section
     return blocks
 
-def assign_captions(blocks:List[Dict])->None:
+def assign_captions(blocks: List[Dict]) -> None:
     for block in blocks:
-        if block["type"] in ["image","table"]:
-            caption=caption_near_heading(blocks,block)
-            block["caption"] = str(caption).strip() if caption is not None else ""
+        if block["type"] in ["image", "table"]:
+            caption = caption_near_heading(blocks, block)
             block["caption"] = str(caption or "").strip()
 
 def page_json_output(page_blocks:List[Dict[str,Any]],page_number:int)->Dict[str,Any]:
